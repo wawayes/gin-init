@@ -1,8 +1,3 @@
-/**
- * @Author Mr.LiuQH
- * @Description 目录相关操作函数
- * @Date 2021/7/6 10:52 上午
- **/
 package utils
 
 import (

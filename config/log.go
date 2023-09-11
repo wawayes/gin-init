@@ -1,8 +1,3 @@
-/**
- * @Author Mr.LiuQH
- * @Description 日志配置信息
- * @Date 2021/7/5 7:44 下午
- **/
 package config
 
 // 日志信息

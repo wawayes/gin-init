@@ -1,8 +1,3 @@
-/**
- * @Author Mr.LiuQH
- * @Description 初始化zap日志
- * @Date 2021/7/5 5:54 下午
- **/
 package initialize
 
 import (
