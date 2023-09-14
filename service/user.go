@@ -17,10 +17,7 @@ var (
 	PasswordErr2 = "两次输入密码不相同"
 )
 
-/**
- * @description: 账户密码登录
- * @param user
- */
+// Login 登录
 func Login(req *request.Login) (*model.User, error) {
 	var user model.User
 	//校验账户和密码
@@ -36,7 +33,7 @@ func Login(req *request.Login) (*model.User, error) {
 	return &user, nil
 }
 
-// 注册用户
+// Register 注册用户
 func Register(req request.Register) (uint, error) {
 	// 参数校验
 	if req.UserAccount == "" || req.UserPassword == "" || req.CheckPassword == "" {
@@ -51,26 +48,33 @@ func Register(req request.Register) (uint, error) {
 		UserAccount:  req.UserAccount,
 		UserPassword: req.UserPassword,
 	}
-	// 与DB交互
-	//_ = global.MysqlClient.Transaction(func(tx *gorm.DB) error {
-	//	if err := tx.Create(&user).Error; err != nil {
-	//		global.Logger.Sugar().Errorf("新增用户失败: %s", err)
-	//		return err
-	//	}
-	//	return nil
-	//})
-	if err := global.MysqlClient.Create(&user).Error; err != nil {
-		global.Logger.Sugar().Errorf("新增用户失败: %s", err)
-		return 0, err
-	}
+	//与DB交互
+	_ = global.MysqlClient.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&user).Error; err != nil {
+			global.Logger.Sugar().Errorf("新增用户失败: %s", err)
+			return err
+		}
+		return nil
+	})
 	return user.ID, nil
 }
 
-// 根据ID查找用户
-func FindUserByID(uid uint) (user *dto.UserDTO, err error) {
-	if errors.Is(global.MysqlClient.Select("id = ?", uid).First(user).Error, gorm.ErrRecordNotFound) {
+// FindUserByID 根据ID查找用户
+func FindUserByID(uid uint) (userDTO *dto.UserDTO, err error) {
+	var user model.User
+	if errors.Is(global.MysqlClient.First(&user, uid).Error, gorm.ErrRecordNotFound) {
 		global.Logger.Sugar().Error(DataNotFound)
 		return nil, errors.New(DataNotFound)
 	}
-	return user, nil
+	userDTO = &dto.UserDTO{
+		ID:          user.ID,
+		UserAccount: user.UserAccount,
+		Nickname:    user.Nickname,
+		UserRole:    user.UserRole,
+		AvatarUrl:   user.AvatarUrl,
+		PhoneNumber: user.PhoneNumber,
+		Email:       user.Email,
+		Status:      user.Status,
+	}
+	return userDTO, nil
 }

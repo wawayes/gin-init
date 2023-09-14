@@ -22,5 +22,7 @@ func InitUserRouter(engine *gin.Engine) {
 		userRouter.POST("register", v1.Register)
 		// 获取当前登录用户
 		userRouter.POST("/current", v1.GetCurrentUser)
+		// 根据ID查询用户
+		userRouter.POST("/searchOne", v1.GetUserById)
 	}
 }

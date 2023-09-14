@@ -1,6 +1,4 @@
-/**
- * @Description 用户相关表
- **/
+// Package v1
 package v1
 
 import (
@@ -15,10 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-/**
- * @description: 用户注册
- * @param c
- */
+// Register 注册
 func Register(c *gin.Context) {
 	// 绑定参数
 	var registerParam request.Register
@@ -32,10 +27,7 @@ func Register(c *gin.Context) {
 	response.OkWithData(c, registerId)
 }
 
-/**
- * @description: 用户登录
- * @param c
- */
+// Login 登录
 func Login(c *gin.Context) {
 	// 绑定参数
 	var req request.Login
@@ -67,15 +59,39 @@ func Login(c *gin.Context) {
 	response.OkWithData(c, session.Get("id"))
 }
 
-// 查询用户信息
+// GetCurrentUser 获取当前用户
 func GetCurrentUser(c *gin.Context) {
 	var req request.GetCurrentUser
-	c.ShouldBindJSON(&req)
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		global.Logger.Error("Json解析失败")
+		response.Error(c, "JSON解析失败")
+		return
+	}
 	session := sessions.Default(c)
 	userId := req.ID
 	v := session.Get(userId)
 	if v == nil {
+		global.Logger.Error("获取登录态失败")
 		response.Error(c, "获取登录态失败")
 	}
 	response.OkWithData(c, v)
+}
+
+// GetUserById 根据id查询用户信息
+func GetUserById(c *gin.Context) {
+	var req request.GetUserById
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		global.Logger.Error("Json解析失败")
+		response.Error(c, "JSON解析失败")
+		return
+	}
+	userId := req.ID
+	userDTO, err := service.FindUserByID(userId)
+	if err != nil {
+		response.Error(c, err.Error())
+		return
+	}
+	response.OkWithData(c, userDTO)
 }
