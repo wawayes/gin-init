@@ -1,6 +1,3 @@
-/**
- * @Description 用户相关的路由
- **/
 package router
 
 import (
@@ -8,10 +5,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-/**
- * @description: 用户相关的路由
- * @param engine
- */
+// InitUserRouter 初始化用户路由
+// 参数:
+//
+//	engine *gin.Engine: Gin引擎实例
+//
+// 返回值: 无
 func InitUserRouter(engine *gin.Engine) {
 	// 不需要登录的路由
 	userRouter := engine.Group("v1/user")

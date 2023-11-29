@@ -20,7 +20,7 @@ mysql:
   port: 3306
   user: root
   password: 123456
-  database: db
+  database: database
   charset: utf8mb4 # 要支持完整的UTF-8编码,需设置成: utf8mb4
   parseTime: true # 解析time.Time类型
   timeZone: Local # 时区,若设置 Asia/Shanghai,需写成: Asia%2fShanghai
