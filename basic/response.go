@@ -22,35 +22,26 @@ type Gin struct {
 
 // ResponseSuccessByPage 分页response 成功返回
 type ResponseSuccessByPage struct {
-	Success   bool        `json:"success"`
-	Page      interface{} `json:"page"`
-	RequestId string      `json:"requestId"`
+	Success bool        `json:"success"`
+	Page    interface{} `json:"page"`
 }
 
 // ResponseSuccess 非分页response 成功返回
 type ResponseSuccess struct {
-	Success   bool        `json:"success"`
-	Result    interface{} `json:"result"`
-	RequestId string      `json:"requestId"`
+	Success bool        `json:"success"`
+	Result  interface{} `json:"result"`
 }
 
 // ResponseFail 失败返回
 type ResponseFail struct {
-	Success   bool        `json:"success"`
-	Code      string      `json:"code"`
-	Message   interface{} `json:"message"`
-	RequestId string      `json:"requestId"`
+	Success bool        `json:"success"`
+	Code    string      `json:"code"`
+	Message interface{} `json:"message"`
 }
 
 // GetGin 获取Gin
 func GetGin(c *gin.Context) Gin {
 	return Gin{c}
-}
-
-// GetRequestId 获取请求ID
-func GetRequestId(c *gin.Context) string {
-	requestId := c.Request.Header.Get("x-bce-request-id")
-	return requestId
 }
 
 // ResponseSuccess 返回成功
@@ -72,7 +63,7 @@ func (g *Gin) ResponseSuccess(data interface{}) {
 }
 
 // ResponseWithError 失败响应
-func (g *Gin) ResponseWithError(httpCode int, err Error, requestId string) {
+func (g *Gin) ResponseWithError(httpCode int, err Error) {
 	resp := &ResponseFail{
 		Success: false,
 		Code:    strconv.Itoa(err.Code()),
@@ -80,7 +71,6 @@ func (g *Gin) ResponseWithError(httpCode int, err Error, requestId string) {
 			"global":      err.GetMsg(),
 			"serverError": err.Error(),
 		},
-		RequestId: requestId,
 	}
 
 	g.C.JSON(httpCode, resp)
@@ -88,11 +78,10 @@ func (g *Gin) ResponseWithError(httpCode int, err Error, requestId string) {
 }
 
 // ResponseSuccessWithOk 成功响应
-func (g *Gin) ResponseSuccessWithOk(data interface{}, requestId string) {
+func (g *Gin) ResponseSuccessWithOk(data interface{}) {
 	resp := &ResponseSuccess{
-		Success:   true,
-		Result:    data,
-		RequestId: requestId,
+		Success: true,
+		Result:  data,
 	}
 	g.C.JSON(http.StatusOK, resp)
 	return
