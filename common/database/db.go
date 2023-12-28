@@ -47,9 +47,8 @@ func (c *InstanceConnection) Init() error {
 				SingularTable: config.DatabaseSetting.SingularTable, // 禁用表名复数
 			},
 		})
-
-	default:
 		// TODO 其他数据库
+	default:
 	}
 	if err != nil {
 		log.Errorf("Init DB ERROR err: %s", err.Error())

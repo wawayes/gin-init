@@ -15,8 +15,8 @@ import (
 func TestRegister(t *testing.T) {
 	test.InitSetting()
 	database.GetInstanceConnection().Init()
-	db := database.GetInstanceConnection().GetDB()
-	convey.Convey("TestRegister", t, func() {
+
+	convey.Convey("TestRegisterSuccess", t, func() {
 		patches := gomonkey.ApplyFunc(user.QueryUserByAccount, func(db *gorm.DB, userAccount string) (*user.User, error) {
 			return &user.User{}, nil
 		})
@@ -27,11 +27,11 @@ func TestRegister(t *testing.T) {
 			UserPassword:  "123123",
 			CheckPassword: "123123",
 		}
-		err := Register(db, &req)
+		err := Register(&req)
 		assert.Nil(t, err)
 	})
 
-	convey.Convey("TestRegister", t, func() {
+	convey.Convey("TestRegisterErr1", t, func() {
 		patches := gomonkey.ApplyFunc(user.QueryUserByAccount, func(db *gorm.DB, userAccount string) (*user.User, error) {
 			return &user.User{}, gorm.ErrRecordNotFound
 		})
@@ -42,11 +42,11 @@ func TestRegister(t *testing.T) {
 			UserPassword:  "123123",
 			CheckPassword: "123123",
 		}
-		err := Register(db, &req)
+		err := Register(&req)
 		assert.NotNil(t, err)
 	})
 
-	convey.Convey("TestRegister", t, func() {
+	convey.Convey("TestRegisterErr2", t, func() {
 		patches := gomonkey.ApplyFunc(user.QueryUserByAccount, func(db *gorm.DB, userAccount string) (*user.User, error) {
 			return &user.User{}, errors.New("query error")
 		})
@@ -57,11 +57,11 @@ func TestRegister(t *testing.T) {
 			UserPassword:  "123123",
 			CheckPassword: "123123",
 		}
-		err := Register(db, &req)
+		err := Register(&req)
 		assert.NotNil(t, err)
 	})
 
-	convey.Convey("TestRegister", t, func() {
+	convey.Convey("TestRegisterErr3", t, func() {
 		patches := gomonkey.ApplyFunc(user.QueryUserByAccount, func(db *gorm.DB, userAccount string) (*user.User, error) {
 			return &user.User{}, nil
 		})
@@ -72,7 +72,7 @@ func TestRegister(t *testing.T) {
 			UserPassword:  "123123000",
 			CheckPassword: "123123",
 		}
-		err := Register(db, &req)
+		err := Register(&req)
 		assert.NotNil(t, err)
 	})
 }

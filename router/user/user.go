@@ -19,10 +19,10 @@ func Register(c *gin.Context) {
 	}
 	registerErr := user.Register(&req)
 	if registerErr != nil {
-		log.Errorf("Register Error: %s", err.Error())
-		g.ResponseWithError(http.StatusOK, err)
+		log.Errorf("Register Error: %s", registerErr.Error())
+		g.ResponseWithError(http.StatusOK, registerErr)
 		return
 	}
-	g.ResponseSuccessWithOk(nil)
+	g.ResponseNoPageSuccess(nil)
 	return
 }

@@ -3,7 +3,6 @@ package basic
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"strconv"
 )
 
 // Page 定义分页对象
@@ -44,41 +43,18 @@ func GetGin(c *gin.Context) Gin {
 	return Gin{c}
 }
 
-// ResponseSuccess 返回成功
-func (g *Gin) ResponseSuccess(data interface{}) {
-	if data != nil {
-		g.C.JSON(http.StatusOK, gin.H{
-			"code":    SUCCESS,
-			"message": "successful",
-			"data":    data,
-		})
-		return
-	} else {
-		g.C.JSON(http.StatusOK, gin.H{
-			"code":    SUCCESS,
-			"message": "successful",
-		})
-		return
+// 返回分页数据
+func (g *Gin) ResponsePageSuccess(data interface{}) {
+	resp := &ResponseSuccessByPage{
+		Success: true,
+		Page:    data,
 	}
-}
-
-// ResponseWithError 失败响应
-func (g *Gin) ResponseWithError(httpCode int, err Error) {
-	resp := &ResponseFail{
-		Success: false,
-		Code:    strconv.Itoa(err.Code()),
-		Message: map[string]interface{}{
-			"global":      err.GetMsg(),
-			"serverError": err.Error(),
-		},
-	}
-
-	g.C.JSON(httpCode, resp)
+	g.C.JSON(http.StatusOK, resp)
 	return
 }
 
-// ResponseSuccessWithOk 成功响应
-func (g *Gin) ResponseSuccessWithOk(data interface{}) {
+// 返回非分页数据
+func (g *Gin) ResponseNoPageSuccess(data interface{}) {
 	resp := &ResponseSuccess{
 		Success: true,
 		Result:  data,

@@ -33,7 +33,7 @@ var (
 )
 
 // Register 用户注册
-func Register(req *RegisterRequest) error {
+func Register(req *RegisterRequest) basic.Error {
 	db := database.GetInstanceConnection().GetDB()
 	_, err := user.QueryUserByAccount(db, req.UserAccount)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -62,7 +62,7 @@ func Register(req *RegisterRequest) error {
 }
 
 // Login 用户登录
-func Login(req *LoginRequest) (*user.User, error) {
+func Login(req *LoginRequest) (*user.User, basic.Error) {
 	db := database.GetInstanceConnection().GetDB()
 	queryUser, queryErr := user.QueryUserByAccount(db, req.UserAccount)
 	// 错误处理
