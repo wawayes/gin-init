@@ -24,5 +24,22 @@ func Register(c *gin.Context) {
 		return
 	}
 	g.ResponseNoPageSuccess(nil)
-	return
+}
+
+func Login(c *gin.Context) {
+	g := basic.GetGin(c)
+	var req user.LoginRequest
+	parseErr := basic.ParseJSON(c, req)
+	if parseErr != nil {
+		log.Errorf("JSON Parse Error: %s", parseErr.Error())
+		g.ResponseWithError(http.StatusOK, parseErr)
+		return
+	}
+	loginUser, loginErr := user.Login(&req)
+	if loginErr != nil {
+		log.Errorf("router user Login error:%s", loginErr)
+		g.ResponseWithError(http.StatusOK, loginErr)
+		return
+	}
+	g.ResponseNoPageSuccess(loginUser)
 }

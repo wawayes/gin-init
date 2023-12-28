@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"gin-init/basic"
 	"gin-init/common/database"
 	"gin-init/model/user"
 	"gin-init/test"
@@ -12,7 +13,7 @@ import (
 	"testing"
 )
 
-func TestRegister(t *testing.T) {
+func TestUserService(t *testing.T) {
 	test.InitSetting()
 	database.GetInstanceConnection().Init()
 
@@ -74,5 +75,90 @@ func TestRegister(t *testing.T) {
 		}
 		err := Register(&req)
 		assert.NotNil(t, err)
+	})
+
+	convey.Convey("TestLoginSuccess", t, func() {
+		patches := gomonkey.ApplyFunc(user.QueryUserByAccount, func(db *gorm.DB, account string) (*user.User, error) {
+			return &user.User{
+				UserID:       "user-123123",
+				UserAccount:  "admin",
+				UserPassword: "123456",
+				Nickname:     "nickname",
+			}, nil
+		})
+		defer patches.Reset()
+		req := &LoginRequest{
+			UserAccount:  "admin",
+			UserPassword: "123456",
+		}
+		loginUser, loginErr := Login(req)
+		assert.Nil(t, loginErr)
+		assert.NotNil(t, loginUser)
+	})
+
+	convey.Convey("TestLoginSuccess", t, func() {
+		patches := gomonkey.ApplyFunc(user.QueryUserByAccount, func(db *gorm.DB, account string) (*user.User, error) {
+			return &user.User{
+				UserID:       "user-123123",
+				UserAccount:  "admin",
+				UserPassword: "123456",
+				Nickname:     "nickname",
+			}, nil
+		})
+		defer patches.Reset()
+		req := &LoginRequest{
+			UserAccount:  "admin",
+			UserPassword: "123456",
+		}
+		loginUser, loginErr := Login(req)
+		assert.Nil(t, loginErr)
+		assert.NotNil(t, loginUser)
+	})
+
+	convey.Convey("TestLoginErr1", t, func() {
+		patches := gomonkey.ApplyFunc(user.QueryUserByAccount, func(db *gorm.DB, account string) (*user.User, error) {
+			return &user.User{
+				UserID:       "user-123123",
+				UserAccount:  "admin",
+				UserPassword: "123456",
+				Nickname:     "nickname",
+			}, nil
+		})
+		defer patches.Reset()
+		req := &LoginRequest{
+			UserAccount:  "admin",
+			UserPassword: "654321",
+		}
+		loginUser, loginErr := Login(req)
+		assert.NotNil(t, loginErr)
+		assert.Nil(t, loginUser)
+	})
+
+	convey.Convey("TestLoginErr2", t, func() {
+		patches := gomonkey.ApplyFunc(user.QueryUserByAccount, func(db *gorm.DB, account string) (*user.User, error) {
+			return nil, gorm.ErrRecordNotFound
+		})
+		defer patches.Reset()
+		req := &LoginRequest{
+			UserAccount:  "admin",
+			UserPassword: "123456",
+		}
+		loginUser, loginErr := Login(req)
+		assert.NotNil(t, loginErr)
+		assert.Nil(t, loginUser)
+	})
+
+	convey.Convey("TestLoginErr3", t, func() {
+		patches := gomonkey.ApplyFunc(user.QueryUserByAccount, func(db *gorm.DB, account string) (*user.User, error) {
+			return nil, basic.NewErr(basic.InnerError, AccountNotExist, errors.New("query Err"))
+		})
+		defer patches.Reset()
+		req := &LoginRequest{
+			UserAccount:  "admin",
+			UserPassword: "123456",
+		}
+		loginUser, loginErr := Login(req)
+		assert.NotNil(t, loginErr)
+		assert.Nil(t, loginUser)
 	})
 }

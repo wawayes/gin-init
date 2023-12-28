@@ -79,10 +79,16 @@ func Login(req *LoginRequest) (*user.User, basic.Error) {
 		log.Errorf("QueryUserByAccount error: %s", PasswordErr)
 		return nil, basic.NewErr(basic.InnerError, AccountNotExist, errors.New(PasswordErr))
 	}
-	loginUser, err := user.QueryUserInfoByUserId(db, queryUser.UserID)
-	if err != nil {
-		log.Errorf("QueryUserInfoByUserId error: %s", err.Error())
-		return nil, basic.NewErr(basic.InnerError, LoginFail, err)
+	// 信息脱敏并返回
+	loginUser := &user.User{
+		UserID:      queryUser.UserID,
+		UserAccount: queryUser.UserAccount,
+		Nickname:    queryUser.Nickname,
+		UserRole:    queryUser.UserRole,
+		AvatarUrl:   queryUser.AvatarUrl,
+		PhoneNumber: queryUser.PhoneNumber,
+		Email:       queryUser.Email,
+		Status:      queryUser.Status,
 	}
 	return loginUser, nil
 }
