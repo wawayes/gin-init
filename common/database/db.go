@@ -77,6 +77,7 @@ func (c *InstanceConnection) Init() error {
 }
 
 /*
+ * GetDB
  * 对外获取数据库连接对象db
  */
 func (c *InstanceConnection) GetDB() *gorm.DB {

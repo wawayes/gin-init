@@ -1,13 +1,34 @@
 package user
 
 import (
+	"context"
 	"errors"
+
+	log "github.com/sirupsen/logrus"
+
 	"gin-init/basic"
 	"gin-init/common/database"
 	"gin-init/model/user"
 	"gin-init/util"
-	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+)
+
+type UserCommon struct {
+	UserModel user.User
+}
+
+type UserService interface {
+	Register(ctx context.Context, req *RegisterRequest) basic.Error
+	Login(ctx context.Context, req *LoginRequest) (*user.User, basic.Error)
+}
+
+var (
+	LoginFail       = "登录失败"
+	CreateUserFail  = "注册失败"
+	QueryUserErr    = "查询失败"
+	AccountHasExist = "用户名已存在"
+	AccountNotExist = "用户名或密码错误"
+	PasswordErr     = "密码输入异常"
 )
 
 // RegisterRequest 用户注册
@@ -23,20 +44,11 @@ type LoginRequest struct {
 	UserPassword string `json:"userPassword"` // 密码
 }
 
-var (
-	LoginFail       = "登录失败"
-	CreateUserFail  = "注册失败"
-	QueryUserErr    = "查询失败"
-	AccountHasExist = "用户名已存在"
-	AccountNotExist = "用户名或密码错误"
-	PasswordErr     = "密码输入异常"
-)
-
 // Register 用户注册
-func Register(req *RegisterRequest) basic.Error {
+func (cu *UserCommon) Register(ctx context.Context, req *RegisterRequest) basic.Error {
 	db := database.GetInstanceConnection().GetDB()
-	_, err := user.QueryUserByAccount(db, req.UserAccount)
-	if errors.Is(err, gorm.ErrRecordNotFound) {
+	u, err := cu.UserModel.QueryUserByAccount(db, req.UserAccount)
+	if u != nil {
 		log.Errorf("QueryUserByAccount error: %s", err.Error())
 		return basic.NewErr(basic.InnerError, AccountHasExist, err)
 	}
@@ -53,7 +65,7 @@ func Register(req *RegisterRequest) basic.Error {
 		UserAccount:  req.UserAccount,
 		UserPassword: req.UserPassword,
 	}
-	createErr := user.CreateUser(db, &createUser)
+	createErr := cu.UserModel.CreateUser(db, &createUser)
 	if createErr != nil {
 		log.Errorf("CreateUser error: %s", err.Error())
 		return basic.NewErr(basic.InnerError, CreateUserFail, createErr)
@@ -62,9 +74,9 @@ func Register(req *RegisterRequest) basic.Error {
 }
 
 // Login 用户登录
-func Login(req *LoginRequest) (*user.User, basic.Error) {
+func (cu *UserCommon) Login(ctx context.Context, req *LoginRequest) (*user.User, basic.Error) {
 	db := database.GetInstanceConnection().GetDB()
-	queryUser, queryErr := user.QueryUserByAccount(db, req.UserAccount)
+	queryUser, queryErr := cu.UserModel.QueryUserByAccount(db, req.UserAccount)
 	// 错误处理
 	if errors.Is(queryErr, gorm.ErrRecordNotFound) {
 		log.Errorf("QueryUserByAccount error: %s", queryErr.Error())
