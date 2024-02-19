@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var cu = User{}
+
 func TestModelUser(t *testing.T) {
 	test.InitSetting()
 	database.GetInstanceConnection().Init()
@@ -18,27 +20,27 @@ func TestModelUser(t *testing.T) {
 	user := &User{
 		UserID: userId,
 	}
-	err := CreateUser(db, user)
+	err := cu.CreateUser(db, user)
 	assert.Nil(t, err)
 
-	err = DeleteUserByUserId(db, userId)
+	err = cu.DeleteUserByUserId(db, userId)
 	assert.Nil(t, err)
 
 	user.UserAccount = "test"
 	user.UserPassword = "testtest"
-	err = UpdateUser(db, user)
+	err = cu.UpdateUser(db, user)
 	assert.Nil(t, err)
 
-	queryUser, err := QueryUserInfoByUserId(db, userId)
+	queryUser, err := cu.QueryUserInfoByUserId(db, userId)
 	assert.Nil(t, err)
 	assert.NotNil(t, queryUser)
 
 	notExistUserId := util.NewShortIDString("user")
-	queryUser, err = QueryUserInfoByUserId(db, notExistUserId)
+	queryUser, err = cu.QueryUserInfoByUserId(db, notExistUserId)
 	assert.Equal(t, gorm.ErrRecordNotFound, err)
 	assert.NotNil(t, queryUser)
 
-	userList, err := QueryUserList(db, 1, 20)
+	userList, err := cu.QueryUserList(db, 1, 20)
 	assert.Nil(t, err)
 	assert.NotNil(t, userList)
 

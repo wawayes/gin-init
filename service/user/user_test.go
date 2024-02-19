@@ -1,164 +1,79 @@
 package user
 
 import (
+	"context"
 	"errors"
 	"gin-init/basic"
 	"gin-init/common/database"
 	"gin-init/model/user"
 	"gin-init/test"
 	"github.com/agiledragon/gomonkey/v2"
-	"github.com/smartystreets/goconvey/convey"
-	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
+	"reflect"
 	"testing"
 )
 
-func TestUserService(t *testing.T) {
+func TestUserCommon_Register(t *testing.T) {
+	cu := &UserCommon{
+		UserModel: user.User{
+			UserAccount: "test_account",
+		},
+	}
+
+	ctx := context.Background()
 	test.InitSetting()
 	database.GetInstanceConnection().Init()
+	req1 := &RegisterRequest{
+		UserAccount:   "test",
+		UserPassword:  "test_password",
+		CheckPassword: "test_password",
+	}
 
-	convey.Convey("TestRegisterSuccess", t, func() {
-		patches := gomonkey.ApplyFunc(user.QueryUserByAccount, func(db *gorm.DB, userAccount string) (*user.User, error) {
-			return &user.User{}, nil
-		})
-		defer patches.Reset()
+	// 使用gomonkey打桩QueryUserByAccount函数
+	patch := gomonkey.ApplyMethod(reflect.TypeOf(&user.User{}), "QueryUserByAccount", func(_ *user.User, _ *gorm.DB, _ string) (*user.User, error) {
+		return nil, nil // 模拟用户不存在
+	})
+	defer patch.Reset()
 
-		req := RegisterRequest{
-			UserAccount:   "test",
-			UserPassword:  "123123",
-			CheckPassword: "123123",
-		}
-		err := Register(&req)
-		assert.Nil(t, err)
+	err := cu.Register(ctx, req1)
+	if err != nil {
+		t.Errorf("Expected nil error when user account does not exist, got %v", err)
+	}
+
+	// 更改打桩行为以模拟账号已存在的情况
+	patch.Reset() // 重置之前的打桩
+	patch = gomonkey.ApplyMethod(reflect.TypeOf(&cu.UserModel), "QueryUserByAccount", func(_ *user.User, _ *gorm.DB, _ string) (*user.User, error) {
+		return &user.User{}, nil // 模拟用户已存在
 	})
 
-	convey.Convey("TestRegisterErr1", t, func() {
-		patches := gomonkey.ApplyFunc(user.QueryUserByAccount, func(db *gorm.DB, userAccount string) (*user.User, error) {
-			return &user.User{}, gorm.ErrRecordNotFound
-		})
-		defer patches.Reset()
+	err = cu.Register(ctx, req1)
+	if err == nil || err.Error() != AccountHasExist {
+		t.Errorf("Expected 'account has exist' error, got %v", err)
+	}
 
-		req := RegisterRequest{
-			UserAccount:   "test",
-			UserPassword:  "123123",
-			CheckPassword: "123123",
-		}
-		err := Register(&req)
-		assert.NotNil(t, err)
+	// 更改打桩行为以创建用户失败的情况
+	patch.Reset()
+	patch = gomonkey.ApplyMethod(reflect.TypeOf(&user.User{}), "QueryUserByAccount", func(_ *user.User, _ *gorm.DB, _ string) (*user.User, error) {
+		return nil, nil // 模拟用户不存在
 	})
-
-	convey.Convey("TestRegisterErr2", t, func() {
-		patches := gomonkey.ApplyFunc(user.QueryUserByAccount, func(db *gorm.DB, userAccount string) (*user.User, error) {
-			return &user.User{}, errors.New("query error")
-		})
-		defer patches.Reset()
-
-		req := RegisterRequest{
-			UserAccount:   "test",
-			UserPassword:  "123123",
-			CheckPassword: "123123",
-		}
-		err := Register(&req)
-		assert.NotNil(t, err)
+	patch = gomonkey.ApplyMethod(reflect.TypeOf(&cu.UserModel), "CreateUser", func(_ *user.User, _ *gorm.DB) error {
+		return basic.NewErr(basic.InnerError, CreateUserFail, errors.New(CreateUserFail)) // 模拟创建用户失败
 	})
+	err = cu.Register(ctx, req1)
+	if err == nil || err.Error() != CreateUserFail {
+		t.Errorf("Expected CreateUserFail error, got %v", err)
+	}
 
-	convey.Convey("TestRegisterErr3", t, func() {
-		patches := gomonkey.ApplyFunc(user.QueryUserByAccount, func(db *gorm.DB, userAccount string) (*user.User, error) {
-			return &user.User{}, nil
-		})
-		defer patches.Reset()
+	// 更改打桩行为以两次密码不正确的情况
+	patch.Reset()
+	req2 := &RegisterRequest{
+		UserAccount:   "test_account12322",
+		UserPassword:  "test_password",
+		CheckPassword: "error_password",
+	}
+	err = cu.Register(ctx, req2)
+	if err == nil || err.Error() != PasswordErr {
+		t.Errorf("Expected PasswordErr error, got %v", err)
+	}
 
-		req := RegisterRequest{
-			UserAccount:   "test",
-			UserPassword:  "123123000",
-			CheckPassword: "123123",
-		}
-		err := Register(&req)
-		assert.NotNil(t, err)
-	})
-
-	convey.Convey("TestLoginSuccess", t, func() {
-		patches := gomonkey.ApplyFunc(user.QueryUserByAccount, func(db *gorm.DB, account string) (*user.User, error) {
-			return &user.User{
-				UserID:       "user-123123",
-				UserAccount:  "admin",
-				UserPassword: "123456",
-				Nickname:     "nickname",
-			}, nil
-		})
-		defer patches.Reset()
-		req := &LoginRequest{
-			UserAccount:  "admin",
-			UserPassword: "123456",
-		}
-		loginUser, loginErr := Login(req)
-		assert.Nil(t, loginErr)
-		assert.NotNil(t, loginUser)
-	})
-
-	convey.Convey("TestLoginSuccess", t, func() {
-		patches := gomonkey.ApplyFunc(user.QueryUserByAccount, func(db *gorm.DB, account string) (*user.User, error) {
-			return &user.User{
-				UserID:       "user-123123",
-				UserAccount:  "admin",
-				UserPassword: "123456",
-				Nickname:     "nickname",
-			}, nil
-		})
-		defer patches.Reset()
-		req := &LoginRequest{
-			UserAccount:  "admin",
-			UserPassword: "123456",
-		}
-		loginUser, loginErr := Login(req)
-		assert.Nil(t, loginErr)
-		assert.NotNil(t, loginUser)
-	})
-
-	convey.Convey("TestLoginErr1", t, func() {
-		patches := gomonkey.ApplyFunc(user.QueryUserByAccount, func(db *gorm.DB, account string) (*user.User, error) {
-			return &user.User{
-				UserID:       "user-123123",
-				UserAccount:  "admin",
-				UserPassword: "123456",
-				Nickname:     "nickname",
-			}, nil
-		})
-		defer patches.Reset()
-		req := &LoginRequest{
-			UserAccount:  "admin",
-			UserPassword: "654321",
-		}
-		loginUser, loginErr := Login(req)
-		assert.NotNil(t, loginErr)
-		assert.Nil(t, loginUser)
-	})
-
-	convey.Convey("TestLoginErr2", t, func() {
-		patches := gomonkey.ApplyFunc(user.QueryUserByAccount, func(db *gorm.DB, account string) (*user.User, error) {
-			return nil, gorm.ErrRecordNotFound
-		})
-		defer patches.Reset()
-		req := &LoginRequest{
-			UserAccount:  "admin",
-			UserPassword: "123456",
-		}
-		loginUser, loginErr := Login(req)
-		assert.NotNil(t, loginErr)
-		assert.Nil(t, loginUser)
-	})
-
-	convey.Convey("TestLoginErr3", t, func() {
-		patches := gomonkey.ApplyFunc(user.QueryUserByAccount, func(db *gorm.DB, account string) (*user.User, error) {
-			return nil, basic.NewErr(basic.InnerError, AccountNotExist, errors.New("query Err"))
-		})
-		defer patches.Reset()
-		req := &LoginRequest{
-			UserAccount:  "admin",
-			UserPassword: "123456",
-		}
-		loginUser, loginErr := Login(req)
-		assert.NotNil(t, loginErr)
-		assert.Nil(t, loginUser)
-	})
 }

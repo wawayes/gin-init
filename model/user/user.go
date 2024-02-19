@@ -1,6 +1,7 @@
 package user
 
 import (
+	"errors"
 	"gorm.io/gorm"
 )
 
@@ -50,10 +51,11 @@ func (*User) UpdateUser(db *gorm.DB, user *User) error {
 }
 
 // QueryUserByAccount 获取用户信息
-func (*User) QueryUserByAccount(db *gorm.DB, account string) (*User, error) {
-	var user User
-	err := db.Where("user_account = ?", account).First(&user).Error
-	return &user, err
+func (*User) QueryUserByAccount(db *gorm.DB, account string) (user *User, err error) {
+	if err := db.Where("user_account = ?", account).First(&user).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return user, err
 }
 
 // QueryUserDetailByUserId 获取用户详情

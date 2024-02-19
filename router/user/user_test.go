@@ -14,6 +14,10 @@ import (
 	"testing"
 )
 
+var (
+	cu = userService.UserCommon{}
+)
+
 func TestUserRouter(t *testing.T) {
 	test.InitSetting()
 
@@ -27,7 +31,7 @@ func TestUserRouter(t *testing.T) {
 			return nil
 		})
 		defer patches.Reset()
-		patches = patches.ApplyFunc(userService.Register, func(req *userService.RegisterRequest) error {
+		patches = patches.ApplyFunc(cu.Register, func(req *userService.RegisterRequest) error {
 			return nil
 		})
 
@@ -47,7 +51,7 @@ func TestUserRouter(t *testing.T) {
 			return basic.NewErrWithCode(basic.InnerError, errors.New("json marshal error"))
 		})
 		defer patches.Reset()
-		patches = patches.ApplyFunc(userService.Register, func(req *userService.RegisterRequest) error {
+		patches = patches.ApplyFunc(cu.Register, func(req *userService.RegisterRequest) error {
 			return nil
 		})
 
@@ -66,7 +70,7 @@ func TestUserRouter(t *testing.T) {
 			return nil
 		})
 		defer patches.Reset()
-		patches = patches.ApplyFunc(userService.Register, func(req *userService.RegisterRequest) basic.Error {
+		patches = patches.ApplyFunc(cu.Register, func(req *userService.RegisterRequest) basic.Error {
 			return basic.NewErrWithCode(basic.InnerError, errors.New("register error"))
 		})
 
@@ -85,7 +89,7 @@ func TestUserRouter(t *testing.T) {
 			return nil
 		})
 		defer patches.Reset()
-		patches = patches.ApplyFunc(userService.Login, func(req *userService.LoginRequest) (*userModel.User, basic.Error) {
+		patches = patches.ApplyFunc(cu.Login, func(req *userService.LoginRequest) (*userModel.User, basic.Error) {
 			return &userModel.User{
 				UserID:      "user-123123",
 				UserAccount: "admin",
@@ -105,7 +109,7 @@ func TestUserRouter(t *testing.T) {
 			return basic.NewErrWithCode(basic.InnerError, errors.New("json marshal error"))
 		})
 		defer patches.Reset()
-		patches = patches.ApplyFunc(userService.Login, func(req *userService.LoginRequest) (*userModel.User, basic.Error) {
+		patches = patches.ApplyFunc(cu.Login, func(req *userService.LoginRequest) (*userModel.User, basic.Error) {
 			return &userModel.User{
 				UserID:      "user-123123",
 				UserAccount: "admin",
@@ -125,7 +129,7 @@ func TestUserRouter(t *testing.T) {
 			return nil
 		})
 		defer patches.Reset()
-		patches = patches.ApplyFunc(userService.Login, func(req *userService.LoginRequest) (*userModel.User, basic.Error) {
+		patches = patches.ApplyFunc(cu.Login, func(req *userService.LoginRequest) (*userModel.User, basic.Error) {
 			return nil, basic.NewErrWithCode(basic.InnerError, errors.New("login error"))
 		})
 		url := "/v1/user/login"

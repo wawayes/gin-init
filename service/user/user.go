@@ -48,13 +48,14 @@ type LoginRequest struct {
 func (cu *UserCommon) Register(ctx context.Context, req *RegisterRequest) basic.Error {
 	db := database.GetInstanceConnection().GetDB()
 	u, err := cu.UserModel.QueryUserByAccount(db, req.UserAccount)
-	if u != nil {
-		log.Errorf("QueryUserByAccount error: %s", err.Error())
-		return basic.NewErr(basic.InnerError, AccountHasExist, err)
-	}
+	// 如果用户名已存在，则返回 AccountHasExist 用户名已存在
 	if err != nil {
 		log.Errorf("QueryUserByAccount error: %s", err.Error())
 		return basic.NewErr(basic.InnerError, QueryUserErr, err)
+	}
+	if u != nil {
+		log.Errorf("AccountHasExist error: %s", AccountHasExist)
+		return basic.NewErr(basic.InnerError, AccountHasExist, err)
 	}
 	if req.UserPassword != req.CheckPassword {
 		log.Errorf("CheckPassword error: %s", PasswordErr)
@@ -67,7 +68,7 @@ func (cu *UserCommon) Register(ctx context.Context, req *RegisterRequest) basic.
 	}
 	createErr := cu.UserModel.CreateUser(db, &createUser)
 	if createErr != nil {
-		log.Errorf("CreateUser error: %s", err.Error())
+		log.Errorf("CreateUser error: %s", createErr.Error())
 		return basic.NewErr(basic.InnerError, CreateUserFail, createErr)
 	}
 	return nil
