@@ -34,6 +34,7 @@ type Database struct {
 type Redis struct {
 	Host        string        // Redis服务器的主机名或IP地址
 	Passwd      string        // 用于Redis连接的密码
+	DB          int           // Redis数据库的编号
 	MaxIdle     int           // Redis连接池中的最大空闲连接数
 	MaxActive   int           // Redis连接池中的最大活动（打开）连接数
 	IdleTimeout time.Duration // Redis连接的最大空闲时间，超时的连接将被关闭

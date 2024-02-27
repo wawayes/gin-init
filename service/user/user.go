@@ -2,15 +2,18 @@ package user
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"gin-init/common/redis"
+	"time"
 
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 
 	"gin-init/basic"
 	"gin-init/common/database"
 	"gin-init/model/user"
 	"gin-init/util"
-	"gorm.io/gorm"
 )
 
 type UserCommon struct {
@@ -48,13 +51,13 @@ type LoginRequest struct {
 func (cu *UserCommon) Register(ctx context.Context, req *RegisterRequest) basic.Error {
 	db := database.GetInstanceConnection().GetDB()
 	u, err := cu.UserModel.QueryUserByAccount(db, req.UserAccount)
-	// 如果用户名已存在，则返回 AccountHasExist 用户名已存在
-	if err != nil {
-		log.Errorf("QueryUserByAccount error: %s", err.Error())
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		log.Errorf("QueryUserByAccount error: %s, req: %v", err.Error(), req)
 		return basic.NewErr(basic.InnerError, QueryUserErr, err)
 	}
+	// 如果用户名已存在，则返回 AccountHasExist 用户名已存在
 	if u != nil {
-		log.Errorf("AccountHasExist error: %s", AccountHasExist)
+		log.Errorf("AccountHasExist error: %s, req: %v", AccountHasExist, req)
 		return basic.NewErr(basic.InnerError, AccountHasExist, err)
 	}
 	if req.UserPassword != req.CheckPassword {
@@ -77,6 +80,7 @@ func (cu *UserCommon) Register(ctx context.Context, req *RegisterRequest) basic.
 // Login 用户登录
 func (cu *UserCommon) Login(ctx context.Context, req *LoginRequest) (*user.User, basic.Error) {
 	db := database.GetInstanceConnection().GetDB()
+	r := redis.GetRedisInstance().GetClient()
 	queryUser, queryErr := cu.UserModel.QueryUserByAccount(db, req.UserAccount)
 	// 错误处理
 	if errors.Is(queryErr, gorm.ErrRecordNotFound) {
@@ -102,6 +106,17 @@ func (cu *UserCommon) Login(ctx context.Context, req *LoginRequest) (*user.User,
 		PhoneNumber: queryUser.PhoneNumber,
 		Email:       queryUser.Email,
 		Status:      queryUser.Status,
+	}
+	// 登录状态存入redis
+	userData, err := json.Marshal(loginUser)
+	if err != nil {
+		log.Errorf("json marshal error login service, err: %s", err.Error())
+		return nil, basic.NewErr(basic.InnerError, LoginFail, err)
+	}
+	err = r.Set(ctx, "login"+loginUser.UserID, userData, time.Hour).Err()
+	if err != nil {
+		log.Errorf("SetNX error: %s", err.Error())
+		return nil, basic.NewErr(basic.InnerError, LoginFail, err)
 	}
 	return loginUser, nil
 }

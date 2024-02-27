@@ -26,8 +26,12 @@ func TestModelUser(t *testing.T) {
 	err = cu.DeleteUserByUserId(db, userId)
 	assert.Nil(t, err)
 
-	user.UserAccount = "test"
+	user.UserAccount = "testnotexist"
 	user.UserPassword = "testtest"
+	qUser, err := cu.QueryUserByAccount(db, user.UserAccount)
+	assert.Nil(t, err)
+	assert.NotNil(t, qUser)
+
 	err = cu.UpdateUser(db, user)
 	assert.Nil(t, err)
 
